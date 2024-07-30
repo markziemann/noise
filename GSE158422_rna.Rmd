@@ -31,7 +31,6 @@ suppressPackageStartupMessages({
   library("fgsea")
   library("parallel")
   library("RhpcBLASctl")
-  library("tictoc")
   library("edgeR")
   library("vioplot")
 })
