@@ -33,6 +33,7 @@ suppressPackageStartupMessages({
   library("RhpcBLASctl")
   library("tictoc")
   library("edgeR")
+  library("vioplot")
 })
 
 CORES=16
@@ -111,6 +112,113 @@ text(mds, labels=colnames(x),cex=0.7)
 
 ```
 
+## Stability - coefficient of variation
+
+```{r,cor}
+
+colcols <- as.character(as.numeric(grepl("T",colnames(x))))
+colcols <- gsub("1","red",gsub("0","blue",colcols))
+
+gspear <- cor(x,method="spearman")
+
+heatmap.2( gspear, scale="none", ColSideColors=colcols ,
+  trace="none",margins = c(6,10), cexRow=.6, cexCol=.5, main="Spearman - genes")
+mtext("Blue=normal,Red=tumour")
+
+xn <- x[,grep("N",colnames(x))]
+nspear <- cor(xn,method="spearman")
+summary(as.vector(nspear))
+
+xt <- x[,grep("T",colnames(x))]
+tspear <- cor(xt,method="spearman")
+summary(as.vector(tspear))
+
+# rank
+xr <- apply(x,2,rank)
+
+res <- apply(xr,2, function(z) {
+  lapply(gs,function(set) {
+    median(z[which(names(z) %in% set)])
+  } )
+})
+
+res <- do.call(cbind,res)
+dim(res)
+res2 <- apply(res,2,as.numeric)
+rownames(res2) <- rownames(res)
+res <- res2
+res_spear <- cor(res,method="spearman")
+
+heatmap.2( res_spear, scale="none", ColSideColors=colcols ,
+  trace="none",margins = c(6,10), cexRow=.6, cexCol=.5, main="Spearman - pathways")
+mtext("Blue=normal,Red=tumour")
+
+resn <- res[,grep("N",colnames(res))]
+resnspear <- cor(resn,method="spearman")
+summary(as.vector(resnspear))
+
+rest <- res[,grep("T",colnames(x))]
+restspear <- cor(rest,method="spearman")
+summary(as.vector(restspear))
+
+xl <- list("gene N"=as.vector(nspear), "gene T"=as.vector(tspear),
+  "set N"=as.vector(resnspear),"set T"=as.vector(restspear))
+
+vioplot(xl,main="Within group sample correlation",
+  col=c("red","red","blue","blue"))
+mtext("Spearman rho")
+
+abline(h=median(as.vector(nspear)),lty=2,col="red")
+abline(h=median(as.vector(tspear)),lty=2,col="red")
+abline(h=median(as.vector(resnspear)),lty=2,col="blue")
+abline(h=median(as.vector(restspear)),lty=2,col="blue")
+
+par(mfrow=c(2,2))
+
+gmds <- cmdscale(dist(t(xr)),k=10)/nrow(xr)
+barplot(colSums(abs(gmds)),names.arg=1:10,ylab="Gene PCA magnitude")
+SUM=round(sum(colSums(abs(gmds))),digits=1)
+mtext(paste("Sum =",SUM))
+
+plot(gmds,col=colcols,xlab="MDS1",ylab="MDS2",main="Gene rank MDS")
+mtext("Blue=Normal,Red=Tumour")
+
+gsmds <- cmdscale(dist(t(res)),k=10)/nrow(res)
+barplot(colSums(abs(gsmds)),names.arg=1:10,ylab="Gene set PCA magnitude")
+SUM=round(sum(colSums(abs(gsmds))),digits=1)
+mtext(paste("Sum =",SUM))
+
+plot(gsmds,col=colcols,xlab="MDS1",ylab="MDS2",main="Gene set rank MDS")
+mtext("Blue=Normal,Red=Tumour")
+
+par(mfrow=c(2,2))
+gmdsn <- cmdscale(dist(t(xn)),k=10)/nrow(xn)
+barplot(colSums(abs(gmdsn)),names.arg=1:10,main="Gene PCA magnitude - Normal")
+SUM=round(sum(colSums(abs(gmdsn))),digits=1)
+mtext(paste("Sum =",SUM))
+
+gmdst <- cmdscale(dist(t(xt)),k=10)/nrow(xt)
+barplot(colSums(abs(gmdst)),names.arg=1:10,main="Gene PCA magnitude - Tumor")
+SUM=round(sum(colSums(abs(gmdst))),digits=1)
+mtext(paste("Sum =",SUM))
+
+gsmdsn <- cmdscale(dist(t(resn)),k=10)/nrow(resn)
+barplot(colSums(abs(gsmdsn)),names.arg=1:10,main="Gene set PCA magnitude - Normal")
+SUM=round(sum(colSums(abs(gsmdsn))),digits=1)
+mtext(paste("Sum =",SUM))
+
+gsmdst <- cmdscale(dist(t(rest)),k=10)/nrow(rest)
+barplot(colSums(abs(gsmdst)),names.arg=1:10,main="Gene set PCA magnitude - Tumour")
+SUM=round(sum(colSums(abs(gsmdst))),digits=1)
+mtext(paste("Sum =",SUM))
+
+par(mfrow=c(1,1))
+
+
+```
+
+## Differential expression
+
 Now do DESeq2
 
 ```{r,deseq2}
@@ -125,7 +233,7 @@ dge <- as.data.frame(zz[order(zz$pvalue),])
 dge_up <- rownames(subset(dge,log2FoldChange>0 & padj<0.05))
 dge_dn <- rownames(subset(dge,log2FoldChange<0 & padj<0.05))
 genes <- c(paste(dge_up,"up"),paste(dge_dn,"dn"))
- 
+
 sig <- subset(dge,padj<0.05)
 SIG = nrow(sig)
 DN = nrow(subset(sig,log2FoldChange<0))
@@ -177,7 +285,7 @@ head(subset(mres,p.adjustANOVA<0.05 & s.dist<0),20) %>%
 
 ```
 
-FGSEA
+## FGSEA
 
 ```{r,fgsea}
 
@@ -186,23 +294,11 @@ dge$stat[which(is.na(dge$stat))] <- 1
 stat <- dge$stat
 names(stat) <- rownames(dge)
 
-pll <- lapply(1:32,function(i) {
-  tic()
-  fres <- fgsea(pathways=gs,stats=stat,minSize=5, nproc=i)
-  tm <- toc()
-  tm$callback_msg
-})
-
 fres <- fgsea(pathways=gs,stats=stat,minSize=5, nproc=8)
 
-pll <- unlist(pll)
-pll <- as.numeric(sapply(strsplit(pll," "),"[[",1))
-
-names(pll) <- 1:32
-barplot(pll)
-plot(1:32,pll,type="b",pch=19)
-
 fsig <- subset(fres,padj<0.05)
+nrow(fsig)
+
 fres <- fres[order(-abs(fres$ES)),]
 
 head(subset(fres,padj<0.05 & ES>0),20) %>%
@@ -217,9 +313,19 @@ fsets <- paste(fsig$pathway,as.character(fsig$ES > 0))
 
 str(fsets)
 
+NRES=nrow(fres)
+NSIG=nrow(fsig)
+NUP=nrow(subset(fsig,ES>0))
+NDN=nrow(subset(fsig,ES<0))
+HEADER=paste(NRES,"pathways,",NSIG,"with FDR<0.05,",NUP,"up and",NDN,"down")
+plot(fres$ES,-log10(fres$pval),pch=19,cex=0.6,col="gray",
+  xlab="ES",ylab="-log10 p-value",main="FGSEA")
+points(fsig$ES,-log10(fsig$pval),cex=0.6,col="red",pch=19)
+mtext(HEADER)
+
 ```
 
-FORA
+## FORA
 
 ```{r,fora1}
 
@@ -268,8 +374,6 @@ ores <- lapply(sizes, function(size) {
   return(c(nup,ndn))
 })
 
-
-
 ores <- do.call(rbind,ores)
 rownames(ores) <- sizes
 colnames(ores) <- c("up","dn")
@@ -286,7 +390,7 @@ barplot(tot,horiz=TRUE,las=1,xlab="no. pathways FDR<0.05",ylab="no. genes select
 
 ## Downsample DESeq2
 
-```{r,deseq_downasmple}
+```{r,deseq_downasmple,fig.height=10}
 
 SAMPLESIZES=c(2,3,5,10,15,20,25,30)
 #SAMPLESIZES=c(3,6,10,22)
@@ -322,7 +426,6 @@ dres <- lapply(SAMPLESIZES,function(n) {
   do.call(rbind,dsres)
 })
 
-blah()
 ssres <- dres
 par(mfrow=c(3,1))
 
@@ -420,31 +523,6 @@ lapply(ratio,summary)
 boxplot(ratio,names=SAMPLESIZES,col="white",ylab="proportion inconsistent",xlab="sample size",cex=0,ylim=c(0,0.5)) ; grid()
 beeswarm(ratio,add=TRUE,pch=1,cex=0.6)
 
-pdf("sens_fgsea.pdf",height=7,width=5)
-par(mfrow=c(3,1))
-
-dots <- lapply(ssres,function(x) { x[,"TP"] })
-boxplot(dots,names=SAMPLESIZES,col="white",ylab="no. consistent",xlab="sample size",cex=0,main="fgsea",ylim=c(0,nrow(fsig))) ; grid()
-beeswarm(dots,add=TRUE,pch=1,cex=0.6)
-abline(h=nrow(fsig))
-
-dots <- lapply(ssres,function(x) { x[,"FP"] })
-boxplot(dots,names=SAMPLESIZES,col="white",ylab="no. inconsistent",xlab="sample size",cex=0) ; grid()
-beeswarm(dots,add=TRUE,pch=1,cex=0.6)
-
-dots <- lapply(ssres,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(ssres,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-boxplot(ratio,names=SAMPLESIZES,col="white",ylab="proportion inconsistent",xlab="sample size",cex=0,ylim=c(0,0.5)) ; grid()
-beeswarm(ratio,add=TRUE,pch=1,cex=0.6)
-
-dev.off()
-
-ssres <- fgres
-
 ```
 
 ## FORA Downsample
@@ -521,29 +599,6 @@ lapply(ratio,summary)
 boxplot(ratio,names=SAMPLESIZES,col="white",ylab="proportion inconsistent",xlab="sample size",cex=0,ylim=c(0,0.5)) ; grid()
 beeswarm(ratio,add=TRUE,pch=1,cex=0.6)
 
-pdf("sens_fora.pdf",height=7,width=5)
-par(mfrow=c(3,1))
-
-dots <- lapply(ssres,function(x) { x[,"TP"] })
-boxplot(dots,names=SAMPLESIZES,col="white",ylab="no. consistent",xlab="sample size",cex=0,main="fora",ylim=c(0,length(osets))) ; grid()
-beeswarm(dots,add=TRUE,pch=1,cex=0.6)
-abline(h=length(osets))
-
-dots <- lapply(ssres,function(x) { x[,"FP"] })
-boxplot(dots,names=SAMPLESIZES,col="white",ylab="no. inconsistent",xlab="sample size",cex=0) ; grid()
-beeswarm(dots,add=TRUE,pch=1,cex=0.6)
-
-dots <- lapply(ssres,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(ssres,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-boxplot(ratio,names=SAMPLESIZES,col="white",ylab="proportion inconsistent",xlab="sample size",cex=0,ylim=c(0,0.5)) ; grid()
-beeswarm(ratio,add=TRUE,pch=1,cex=0.6)
-
-dev.off()
-
 ```
 
 ## Summarise downnsampling
@@ -618,135 +673,7 @@ points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
 mtext("Proportion of inconsistent pathways")
 grid()
 
-### PDF
-pdf("sens.pdf",height=4,width=8)
-par(mfrow=c(1,3))
-
-dots <- lapply(fgres,function(x) { x[,"TP"] })
-fgres2 <- do.call(rbind,lapply(dots,summary))
-
-dots <- lapply(fores,function(x) { x[,"TP"] })
-fores2 <- do.call(rbind,lapply(dots,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=length(fsets)
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="no. pathways", main="no. consistent pathways FDR<0.05",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-abline(h=length(osets),col="red")
-abline(h=length(fsets),col="blue")
-grid()
-
-legend("bottomright", legend=c("fgsea","fora"),
-       col=c("blue","red"), lty=1, pch=19,  cex=1)
-
-dots <- lapply(fgres,function(x) { x[,"FP"] })
-fgres2 <- do.call(rbind,lapply(dots,summary))
-
-dots <- lapply(fores,function(x) { x[,"FP"] })
-fores2 <- do.call(rbind,lapply(dots,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=max(c(fores2[,"Median"],fgres2[,"Median"]))
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="no. pathways",main="no. inconsistent pathways FDR<0.05",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-grid()
-
-dots <- lapply(fores,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(fores,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-fores2 <- do.call(rbind,lapply(ratio,summary))
-
-dots <- lapply(fgres,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(fgres,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-fgres2 <- do.call(rbind,lapply(ratio,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=max(c(fores2[,"Median"],fgres2[,"Median"]))
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="proportion",main="Proportion of inconsistent pathways",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-grid()
-dev.off()
-
-
-### PNG
-png("fig4.png", width=7,height=5,units="in",res=150,pointsize=12)
-par(mfrow=c(1,3))
-
-dots <- lapply(fgres,function(x) { x[,"TP"] })
-fgres2 <- do.call(rbind,lapply(dots,summary))
-
-dots <- lapply(fores,function(x) { x[,"TP"] })
-fores2 <- do.call(rbind,lapply(dots,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=length(fsets)
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="no. pathways", main="no. consistent pathways FDR<0.05",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-abline(h=length(osets),col="red")
-abline(h=length(fsets),col="blue")
-grid()
-
-legend("bottomright", legend=c("fgsea","fora"),
-       col=c("blue","red"), lty=1, pch=19,  cex=1)
-
-dots <- lapply(fgres,function(x) { x[,"FP"] })
-fgres2 <- do.call(rbind,lapply(dots,summary))
-
-dots <- lapply(fores,function(x) { x[,"FP"] })
-fores2 <- do.call(rbind,lapply(dots,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=max(c(fores2[,"Median"],fgres2[,"Median"]))
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="no. pathways",main="no. inconsistent pathways FDR<0.05",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-grid()
-
-dots <- lapply(fores,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(fores,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-fores2 <- do.call(rbind,lapply(ratio,summary))
-
-dots <- lapply(fgres,function(x) { x[,"TP"] })
-TPdots <- do.call(rbind,dots)
-dots <- lapply(fgres,function(x) { x[,"FP"] })
-FPdots <- do.call(rbind,dots)
-ratio <- t(FPdots / (TPdots + FPdots))
-ratio <- lapply(1:ncol(ratio),function(i) {ratio[,i]})
-fgres2 <- do.call(rbind,lapply(ratio,summary))
-
-df <- data.frame(SAMPLESIZES,fores2[,"Median"],fgres2[,"Median"])
-colnames(df) <- c("Sample size", "fora", "fgsea")
-
-MAX=max(c(fores2[,"Median"],fgres2[,"Median"]))
-plot(df$`Sample size`,df$fora,type="b",col="red",pch=19,xlab="Sample size",ylab="proportion",main="Proportion of inconsistent pathways",ylim=c(0,MAX))
-points(df$`Sample size`,df$fgsea,type="b",col="blue",pch=19 )
-grid()
-dev.off()
-
-
 ```
-
-
 
 ## Session information
 
