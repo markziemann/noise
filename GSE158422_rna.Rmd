@@ -262,28 +262,6 @@ heatmap.2(  as.matrix(dge[1:50,c(7:ncol(dge))]), col=colfunc(25),scale="row",
 
 ```
 
-RNA expression pathway enrichment with mitch
-
-```{r,mitch}
-
-rna <- mitch_import(dge, DEtype="deseq2")
-
-res <- mitch_calc(rna, genesets=gs, priority="effect",cores=16, minsetsize=5)
-
-mres <- res$enrichment_result
-msig <- subset(mres,p.adjustANOVA<0.05)
-nrow(msig)
-
-head(subset(mres,p.adjustANOVA<0.05 & s.dist>0),20) %>%
-  kbl(caption="mRNA upregulated pathways") %>%
-  kable_styling("hover",full_width=FALSE)
-
-head(subset(mres,p.adjustANOVA<0.05 & s.dist<0),20) %>%
-  kbl(caption="mRNA downregulated pathways") %>%
-  kable_styling("hover",full_width=FALSE)
-
-```
-
 ## FGSEA
 
 ```{r,fgsea}
