@@ -630,7 +630,7 @@ colnames(df) <- c("Sample size", "deseq2")
 df
 
 MAX=max(c(dres2[,"Median"]))
-plot(df$`Sample size`,df$desseq2,type="b",col="black",pch=19,xlab="Sample size",ylab="proportion",ylim=c(0,MAX))
+plot(df$`Sample size`,df$deseq2,type="b",col="black",pch=19,xlab="Sample size",ylab="proportion",ylim=c(0,MAX))
 mtext("Proportion of inconsistent genes")
 grid()
 
