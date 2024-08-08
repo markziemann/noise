@@ -330,6 +330,12 @@ oresdn <- paste(oresdn$pathway,"FALSE")
 osets <- c(oresup,oresdn)
 str(osets)
 
+oresup <- as.data.frame(fora(pathways=gs,genes=sigup,universe=bg,minSize=5))
+oresup$es <- (oresup$overlap / length(sigup) ) / (oresup$size / length(bg))
+
+oresdn <- as.data.frame(fora(pathways=gs,genes=sigdn,universe=bg,minSize=5))
+oresdn$es <- (oresdn$overlap / length(sigdn) ) / (oresdn$size / length(bg))
+
 oresup <- subset(oresup,padj<0.01)
 oresup <- paste(oresup$pathway,"TRUE")
 
