@@ -758,18 +758,18 @@ fores1 <- lapply(SAMPLESIZES,function(n) {
     zz <-cbind(as.data.frame(z),assay(vsd))
     dge <- as.data.frame(zz[order(zz$pvalue),])
 
-    sigup <- rownames(subset(dge,padj<0.01 & log2FoldChange>0))
+    sigup <- rownames(subset(dge,padj<0.05 & log2FoldChange>0))
     if (length(sigup) < 250) { sigup <- head(rownames(subset(dge, log2FoldChange>0)),250) }
-    sigdn <- rownames(subset(dge,padj<0.01 & log2FoldChange<0))
+    sigdn <- rownames(subset(dge,padj<0.05 & log2FoldChange<0))
     if (length(sigdn) < 250) { sigdn <- head(rownames(subset(dge, log2FoldChange<0)),250) }
     bg <- rownames(dge)
 
     oresup <- as.data.frame(fora(pathways=gs,genes=sigup,universe=bg,minSize=5))
-    oresup <- subset(oresup,padj<0.05)
+    oresup <- subset(oresup,padj<0.01)
     oresup <- paste(oresup$pathway,"TRUE")
 
     oresdn <- as.data.frame(fora(pathways=gs,genes=sigdn,universe=bg,minSize=5))
-    oresdn <- subset(oresdn,padj<0.05)
+    oresdn <- subset(oresdn,padj<0.01)
     oresdn <- paste(oresdn$pathway,"FALSE")
 
     osets2 <- c(oresup,oresdn)
@@ -811,7 +811,7 @@ beeswarm(ratio,add=TRUE,pch=1,cex=0.6)
 
 ```
 
-## Summarise downnsampling
+## Summarise downsampling
 
 Downsample DEG analysis.
 
