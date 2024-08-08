@@ -922,7 +922,7 @@ abline(h=length(fsets),col="blue")
 abline(h=length(osets1),col="pink")
 abline(h=length(fsets1),col="lightblue")
 
-mtext("no. consistent pathways FDR<0.05")
+mtext("no. consistent pathways")
 grid()
 
 legend("bottomright", legend=c("fgsea 5%","fora 5%", "fgsea 1%", "fora 1%"),
