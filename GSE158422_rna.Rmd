@@ -994,7 +994,7 @@ MAX=max(c(fores2[,"Median"],fgres2[,"Median"]))
 plot(df$`Sample size`,df$fora5,type="b",col="red",pch=19,xlab="Sample size",ylab="proportion",ylim=c(0,MAX),lwd=3)
 points(df$`Sample size`,df$fgsea5,type="b",col="blue",pch=19, lwd=3 )
 points(df$`Sample size`,df$fora1,type="b",col="pink",pch=19, lwd=3 )
-points(df$`Sample size`,df$fgsea1,type="b",col="lghtblue",pch=19, lwd=3 )
+points(df$`Sample size`,df$fgsea1,type="b",col="lightblue",pch=19, lwd=3 )
 mtext("Proportion of inconsistent pathways")
 grid()
 
