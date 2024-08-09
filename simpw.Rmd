@@ -142,9 +142,8 @@ res %>% kbl(caption="simulation_results") %>% kable_paper("hover", full_width = 
 
 ## Plot
 
-fig1_ORAjac.png
 
-```{r,plot1}
+```{r,plot1,fig.width=10,fig.height=6}
 
 fo5 <- subset(res,PWAY_FUNC == "fora5")
 fo1 <- subset(res,PWAY_FUNC == "fora1")
