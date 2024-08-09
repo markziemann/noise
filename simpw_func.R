@@ -304,7 +304,7 @@ dge <- sapply(x,"[",6)
 xx <- mclapply( dge , function(x) { 
  s <- x$stat
  names(s) <- rownames(x)
- p <- as.data.frame(fgsea(pathways=gsets, stats=s ,minSize = 5 ))
+ p <- as.data.frame(fgsea(pathways=gsets, stats=s ,minSize = 5, nproc=cores ))
  p
 } , mc.cores=cores )
 
@@ -353,7 +353,7 @@ dge <- sapply(x,"[",6)
 xx <- mclapply( dge , function(x) {
  s <- x$stat
  names(s) <- rownames(x)
- p <- as.data.frame(fgsea(pathways=gsets, stats=s ,minSize = 5 ))
+ p <- as.data.frame(fgsea(pathways=gsets, stats=s ,minSize = 5, nproc=cores ))
  p
 } , mc.cores=cores )
 
