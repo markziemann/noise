@@ -244,7 +244,7 @@ Barplot is simpler.
 ```{r,bars}
 
 prec <- c("fora 5%"=mean(fo5$p),"fgsea 5%"=mean(fg5$p),"fora 1%"=mean(fo1$p),"fgsea 1%"=mean(fg1$p))
-rec <- c("fo5"=mean(fo5$r),"fg5"=mean(fg5$r),"fo1"=mean(fo1$r),"fg1"=mean(fg1$r))
+rec <- c("fora 5%"=mean(fo5$r),"fgsea 5%"=mean(fg5$r),"fora 1%"=mean(fo1$r),"fgsea 1%"=mean(fg1$r))
 f1 <- sapply(1:length(prec), function(i) { 2/(1/rec[i]+1/prec[i]) })
 
 par(mfrow=c(1,3))
