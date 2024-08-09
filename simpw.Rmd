@@ -12,7 +12,7 @@ output:
 theme: cosmo
 ---
 
-Source: https://github.com/markziemann/background
+Source: https://github.com/markziemann/noise
 
 ```{r,libs}
 
@@ -107,6 +107,9 @@ Now run the analysis.
 
 ```{r,sims}
 
+if ( file.exists("simpw.Rds") ) {
+  message("res.Rds found on disk, skipping")
+} else {
 res <- lapply(1:nrow(mygrid), function(i) {
   FRAC_DE=mygrid[i,"FRAC_DE"]
   FC=mygrid[i,"FC"]
@@ -120,7 +123,8 @@ res <- lapply(1:nrow(mygrid), function(i) {
 
 res <- do.call(rbind,res)
 
-saveRDS(res,file="res.Rds")
+saveRDS(res,file="simpw.Rds")
+}
 
 ```
 
@@ -138,117 +142,96 @@ fig1_ORAjac.png
 
 ```{r,plot1}
 
-blah()
+fo5 <- subset(res,PWAY_FUNC == "fora5")
+fo1 <- subset(res,PWAY_FUNC == "fora1")
+fg5 <- subset(res,PWAY_FUNC == "fgsea5")
+fg1 <- subset(res,PWAY_FUNC == "fgsea1")
 
-cp <- subset(res,PWAY_FUNC == "clusterProfiler default")
-cpbg <- subset(res,PWAY_FUNC == "clusterProfiler BG fix")
-cpfdr <- subset(res,PWAY_FUNC == "clusterProfiler FDR fix")
-cpbgfdr <- subset(res,PWAY_FUNC == "clusterProfiler BG and FDR fix")
-fo <- subset(res,PWAY_FUNC == "fora")
-fg <- subset(res,PWAY_FUNC == "fgsea")
-
-cp %>% kbl(caption="clusterProfiler") %>% kable_paper("hover", full_width = F)
-cpbg %>% kbl(caption="clusterProfiler with background bug fix") %>% kable_paper("hover", full_width = F)
-cpfdr %>% kbl(caption="clusterProfiler with FDR bug fix") %>% kable_paper("hover", full_width = F)
-cpbgfdr %>% kbl(caption="clusterProfiler with background and FDR fixes") %>% kable_paper("hover", full_width = F)
-fo %>% kbl(caption="fora") %>% kable_paper("hover", full_width = F)
-fg %>% kbl(caption="fg") %>% kable_paper("hover", full_width = F)
+fo5 %>% kbl(caption="fora 5% FDR") %>% kable_paper("hover", full_width = F)
+fg5 %>% kbl(caption="fgsea 5% FDR") %>% kable_paper("hover", full_width = F)
+fo1 %>% kbl(caption="fora 1% FDR") %>% kable_paper("hover", full_width = F)
+fg1 %>% kbl(caption="fgsea 1% FDR") %>% kable_paper("hover", full_width = F)
 
 par(mfrow=c(1,3))
 par(mar=c(c(5.1, 5.1, 2.1, 2.1) ))
 
-plot(cp$VARIANCE,cp$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision")
-points(cpbg$VARIANCE,cpbg$p,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$p,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$p,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$p,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$p,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$p,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$p,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$p,type="b",pch=19,col="lightblue",lwd=3)
+grid()
 
 legend("bottomleft", inset=.02, title="tool",
-   c("CP default","CP BG fix","CP FDR fix","CP BG and FDR fix","fora","fgsea"),
-   col=c("black","orange","darkgreen","purple","red","blue"),horiz=FALSE, cex=1.0, pch=19,lwd=2)
+   c("fora 5%","fgsea 5%", "fora 1%", "fgsea 1%"),
+   col=c("red","blue","pink","lightblue"),horiz=FALSE, cex=1.0, pch=19,lwd=2)
 
-plot(cp$VARIANCE,cp$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall")
-points(cpbg$VARIANCE,cpbg$r,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$r,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$r,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$r,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$r,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$r,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$r,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$r,type="b",pch=19,col="lightblue",lwd=3)
+grid()
 
-plot(cp$VARIANCE,cp$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="f1")
-points(cpbg$VARIANCE,cpbg$f,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$f,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$f,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$f,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$f,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="F1",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$f,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$f,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$f,type="b",pch=19,col="lightblue",lwd=3)
+grid()
 
-
-png("fig3_sim.png", width=7,height=5,units="in",res=150,pointsize=12)
+##########################
+png("sim.png", width=7,height=5,units="in",res=150,pointsize=12)
 par(mar=c(c(5.1, 5.1, 2.1, 2.1) ))
 par(mfrow=c(1,3))
 
-plot(cp$VARIANCE,cp$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision")
-points(cpbg$VARIANCE,cpbg$p,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$p,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$p,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$p,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$p,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$p,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$p,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$p,type="b",pch=19,col="lightblue",lwd=3)
 grid()
+
 legend("bottomleft", inset=.02, title="tool",
-   c("CP default","CP BG fix","CP FDR fix","CP BG and FDR fix","fora","fgsea"),
-   col=c("black","orange","darkgreen","purple","red","blue"),
-   horiz=FALSE, cex=1.0, pch=19,lwd=2)
+   c("fora 5%","fgsea 5%", "fora 1%", "fgsea 1%"),
+   col=c("red","blue","pink","lightblue"),horiz=FALSE, cex=1.0, pch=19,lwd=2)
 
-plot(cp$VARIANCE,cp$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall")
-points(cpbg$VARIANCE,cpbg$r,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$r,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$r,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$r,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$r,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$r,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$r,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$r,type="b",pch=19,col="lightblue",lwd=3)
 grid()
 
-plot(cp$VARIANCE,cp$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="f1")
-points(cpbg$VARIANCE,cpbg$f,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$f,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$f,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$f,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$f,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="F1",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$f,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$f,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$f,type="b",pch=19,col="lightblue",lwd=3)
 grid()
+
 dev.off()
 
 #################################
-
-pdf("fig3_sim.pdf", width=7,height=5,pointsize=12)
+pdf("sim.pdf", width=7,height=5,pointsize=12)
 par(mar=c(c(5.1, 5.1, 2.1, 2.1) ))
 par(mfrow=c(1,3))
 
-plot(cp$VARIANCE,cp$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision")
-points(cpbg$VARIANCE,cpbg$p,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$p,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$p,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$p,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$p,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$p,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="precision",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$p,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$p,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$p,type="b",pch=19,col="lightblue",lwd=3)
 grid()
 legend("bottomleft", inset=.02, title="tool",
-   c("CP default","CP BG fix","CP FDR fix","CP BG and FDR fix","fora","fgsea"),
-   col=c("black","orange","darkgreen","purple","red","blue"),
-   horiz=FALSE, cex=1.0, pch=19,lwd=2)
+   c("fora 5%","fgsea 5%", "fora 1%", "fgsea 1%"),
+   col=c("red","blue","pink","lightblue"),horiz=FALSE, cex=1.0, pch=19,lwd=2)
 
-plot(cp$VARIANCE,cp$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall")
-points(cpbg$VARIANCE,cpbg$r,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$r,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$r,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$r,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$r,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$r,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="recall",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$r,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$r,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$r,type="b",pch=19,col="lightblue",lwd=3)
 grid()
 
-plot(cp$VARIANCE,cp$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="f1")
-points(cpbg$VARIANCE,cpbg$f,type="b",pch=19,col="orange")
-points(cpfdr$VARIANCE,cpfdr$f,type="b",pch=19,col="darkgreen")
-points(cpbgfdr$VARIANCE,cpbgfdr$f,type="b",pch=19,col="purple")
-points(fo$VARIANCE,fo$f,type="b",pch=19,col="red")
-points(fg$VARIANCE,fg$f,type="b",pch=19,col="blue")
+plot(fo5$VARIANCE,fo5$f,ylim=c(0,1),type="b",pch=19,xlab="variance added",ylab="index",main="F1",col="red",lwd=3)
+points(fg5$VARIANCE,fg5$f,type="b",pch=19,col="blue",lwd=3)
+points(fo1$VARIANCE,fo1$f,type="b",pch=19,col="pink",lwd=3)
+points(fg1$VARIANCE,fg1$f,type="b",pch=19,col="lightblue",lwd=3)
 grid()
+
 dev.off()
 
 ```
@@ -257,8 +240,8 @@ Barplot is simpler.
 
 ```{r,bars}
 
-prec <- c("CP default"=mean(cp$p),"CP BG fix"=mean(cpbg$p),"CP FDR fix"=mean(cpfdr$p),"CP BG and FDR fix"=mean(cpbgfdr$p),"fora"=mean(fo$p),"fgsea"=mean(fg$p))
-rec <- c("CP default"=mean(cp$r),"CP BG fix"=mean(cpbg$r),"CP FDR fix"=mean(cpfdr$r),"CP BG and FDR fix"=mean(cpbgfdr$r),"fora"=mean(fo$r),"fgsea"=mean(fg$r))
+prec <- c("fora 5%"=mean(fo5$p),"fgsea 5%"=mean(fg5$p),"fora 1%"=mean(fo1$p),"fgsea 1%"=mean(fg1$p))
+rec <- c("fo5"=mean(fo5$r),"fg5"=mean(fg5$r),"fo1"=mean(fo1$r),"fg1"=mean(fg1$r))
 f1 <- sapply(1:length(prec), function(i) { 2/(1/rec[i]+1/prec[i]) })
 
 par(mfrow=c(1,3))
@@ -270,7 +253,7 @@ text((1:6*1.18)-0.45,rec+0.02,labels=signif(rec,3))
 barplot(f1,ylim=c(0,1.1),las=2,main="F1",ylab="")
 text((1:6*1.18)-0.45,f1+0.02,labels=signif(f1,3))
 
-png("fig3_bars.png", width=7,height=5,units="in",res=150,pointsize=12)
+png("simbars.png", width=7,height=5,units="in",res=150,pointsize=12)
 par(mar=c(c(9.1, 3.5, 2.1, 1.1) ))
 par(mfrow=c(1,3))
 barplot(prec,ylim=c(0,1.1),las=2,main="precision",ylab="")
@@ -282,7 +265,7 @@ text((1:6*1.18)-0.45,f1+0.02,labels=signif(f1,3))
 dev.off()
 
 #################################
-pdf("fig3_bars.pdf", width=7,height=5,pointsize=12)
+pdf("simbars.pdf", width=7,height=5,pointsize=12)
 par(mar=c(c(9.1, 3.5, 2.1, 1.1) ))
 par(mfrow=c(1,3))
 barplot(prec,ylim=c(0,1.1),las=2,main="precision",ylab="")
