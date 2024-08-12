@@ -17,7 +17,7 @@ Source: https://github.com/markziemann/background/
 Here, we look at the sensitivity of pathway analysis of RNA-seq data.
 
 ```{r,packages}
-
+RhpcBLASctl::blas_set_num_threads(1)
 suppressPackageStartupMessages({
   library("DESeq2")
   library("eulerr")

@@ -163,7 +163,6 @@ RepParallel <- function(n, expr, simplify = "array",...) {
 # define DESeq2 function
 ##################################################
 deseq2<-function(x) {
-  library("DESeq2")
   label = "simulate"
   y <- x[[1]]
   samplesheet <- as.data.frame(colnames(y))
@@ -395,7 +394,7 @@ x
 ##################################
 # aggregate function
 ##################################
-agg_dge <- function(a,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,DGE_FUNC,gsets, cores = 32) {
+agg_dge <- function(a,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,DGE_FUNC,gsets, cores = 16) {
 
 #TEST# N_REPS=5 ; SUM_COUNT=30000000 ; VARIANCE=0.45 ; FRAC_DE=0.05 ; FC=1 ; SIMS=8 ; DGE_FUNC="deseq2" ; gsets=gsets
 
@@ -405,16 +404,17 @@ xxx <- RepParallel(SIMS,simrna(a,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,gsets), si
 xxx <- mclapply(xxx , DGE_FUNC , mc.cores = cores )
 
 # run fora pos 9,10
-xxx <- run_fora5(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=32)
+xxx <- run_fora5(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=cores)
 
 # run fora pos 11,12
-xxx <- run_fora1(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=32)
+xxx <- run_fora1(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=cores)
 
 # run fgsea pos 13,14
-xxx <- run_fgsea5(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=32)
+xxx <- run_fgsea5(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=ccores)
 
 # run fgsea pos 15,16
-xxx <- run_fgsea1(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=32)
+xxx <- run_fgsea1(xxx,DGE_FUNC,gsets,N_REPS,SUM_COUNT,VARIANCE,FRAC_DE,FC,SIMS,cores=cores)
+
 
 # return the result
 g=list()
